@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  namespace: otel
+data:
+  otel-collector-config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+      filelog:
+        include_paths:
+        - /var/log/containers/*.log
+        multiline_parser:
+          type: json
+
+    processors:
+      batch:
+        send_batch_size: 1000
+        timeout: 10s
+
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 512
+        spike_limit_mib: 128
+
+      resource_detection:
+        detectors: [env, system, docker, kubernetes]
+
+    exporters:
+      otlp:
+        endpoint: <INSTANCE_HOST>:4317
+        headers:
+          Authorization: Basic <API_TOKEN>
+        tls:
+          insecure: false
+
+      otlphttp:
+        endpoint: https://<INSTANCE_HOST>/api/default/<STREAM_NAME>/_json
+        headers:
+          Authorization: Basic <API_TOKEN>
+        compression: gzip
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, batch, resource_detection]
+          exporters: [otlp]
+
+        logs:
+          receivers: [otlp, filelog]
+          processors: [memory_limiter, batch, resource_detection]
+          exporters: [otlphttp]

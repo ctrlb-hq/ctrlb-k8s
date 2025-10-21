@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-config
+  namespace: ctrlb-logging
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush        1
+        Daemon       Off
+        Log_Level    info
+    [INPUT]
+        Name              tail
+        Path              /var/log/containers/*.log
+        Tag               kube.*
+        Parser            docker
+        DB                /var/log/flb_kube.db
+        Mem_Buf_Limit     50MB
+        Skip_Long_Lines   On
+    [OUTPUT]
+        Name         http
+        Match        kube.*
+        Host         <INSTANCE_HOST>
+        Port         8080
+        URI          /api/default/<STREAM_NAME>/_json_evolving
+        Format       json
+        Json_Date_Key _timestamp
+        Json_Date_Format epoch_ms
+        Header       Authorization Basic <API_TOKEN>
+        Header       Content-Type application/json
+        tls          Off
+        tls.verify   Off
