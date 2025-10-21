@@ -34,17 +34,11 @@ data:
 
     exporters:
       otlp:
-        endpoint: <INSTANCE_HOST>:4317
+        endpoint: /api/default/<STREAM_NAME>/_otel
         headers:
           Authorization: Basic <API_TOKEN>
         tls:
           insecure: false
-
-      otlphttp:
-        endpoint: https://<INSTANCE_HOST>/api/default/<STREAM_NAME>/_json
-        headers:
-          Authorization: Basic <API_TOKEN>
-        compression: gzip
 
     service:
       pipelines:
@@ -56,4 +50,4 @@ data:
         logs:
           receivers: [otlp, filelog]
           processors: [memory_limiter, batch, resource_detection]
-          exporters: [otlphttp]
+          exporters: [otlp]
